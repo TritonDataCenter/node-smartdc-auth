@@ -54,7 +54,7 @@ and callback is of the form `function (err, object)`, where `object` has the
 following properties:
 
     {
-	      algorithm: 'rsa-sha256',   // the signing algorithm used
+        algorithm: 'rsa-sha256',   // the signing algorithm used
         keyId: '7b:c0:5c:d6:9e:11:0c:76:04:4b:03:c9:11:f2:72:7f', // key fingerprint
         signature: $base64_encoded_signature,  // the actual signature
         user: 'mark'   // the user to issue the call as.
