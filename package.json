@@ -1,7 +1,7 @@
 {
     "name": "smartdc-auth",
     "description": "SmartDataCenter Authentication Library",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "author": "Joyent (joyent.com)",
     "contributors": [
         "Mark Cavage",
@@ -24,7 +24,7 @@
     "dependencies": {
         "assert-plus": "0.1.2",
         "clone": "0.1.5",
-        "ssh-agent": "0.2.2",
+        "ssh-agent": "0.2.3",
         "once": "1.3.0",
         "vasync": "1.4.3"
     },
