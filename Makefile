@@ -11,6 +11,11 @@ JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -o indent=4,doxygen,unparenthesized-return=0
 
+#
+# Tools
+#
+NPM_EXEC        := npm
+TAPE		:= ./node_modules/.bin/tape
 
 include ./tools/mk/Makefile.defs
 
@@ -19,7 +24,11 @@ include ./tools/mk/Makefile.defs
 #
 .PHONY: all
 all: 
-	npm install
+	$(NPM_EXEC) install
+
+.PHONY: test
+test: all
+	$(TAPE) test/*.test.js
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.targ
