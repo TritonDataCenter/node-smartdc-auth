@@ -7,7 +7,6 @@ Utility functions to sign http requests to SmartDC services.
 
     var signer = auth.privateKeySigner({
           key: fs.readFileSync(process.env.HOME + '/.ssh/id_rsa', 'utf8'),
-          keyId: process.env.SDC_CLI_KEY_ID,
           user: process.env.SDC_CLI_ACCOUNT
     });
 
@@ -27,25 +26,71 @@ The `keyId` for SmartDC is always `/$your_joyent_login/keys/$ssh_fingerprint`,
 and the supported algorithms are: `rsa-sha1`, `rsa-sha256` and `dsa-sha1`.  You
 then just append the base64 encoded signature.
 
-Please, note that at the moment of writing this document, `dsa-sha1` algorithm
-does not work with `sshAgentSigner` yet.
-
 ## Authenticating Requests
 
 When creating a smartdc client, you'll need to pass in a callback function for
-the `sign` parameter.  smartdc-auth ships with three functions that will likely
-suit your need: `cliSigner`, `privateKeySigner` and `sshAgentSigner`.  All of
-these callbacks will automatically do the correct crypto for authenticating
-requests, the difference is that `privateKeySigner` expects (non-passphrase
-protected) keys to be passed in directly (as a file name), whereas `cliSigner`
-and `sshAgentSigner` will load your credentials on each request from the SSH
-agent (if available). Both callbacks require you to set the account (login)
-and keyId (SSH key fingerprint).
+the `sign` parameter.  smartdc-auth ships with three constructors that return
+such functions, which may suit your need: `cliSigner`, `privateKeySigner` and
+`sshAgentSigner`.
+
+### `privateKeySigner(options);`
+
+A basic signer which signs using a given PEM (PKCS#1) format private key only.
+Ideal for simple use cases where the key is stored in a file on the filesystem
+ready for use.
+
+- `options`: an Object containing properties:
+  - `key`: a String, PEM-format (PKCS#1) private key, for any supported algorithm
+  - `user`: a String, SDC login name to be used in the full keyId, above
+  - `subuser`: an optional String, SDC sub-user login name
+  - `keyId`: optional String, the fingerprint of the `key` (not the same as the
+             full keyId given to the server). Ignored unless it does not match
+             the given `key`, then an Error will be thrown.
+
+### `sshAgentSigner(options);`
+
+Signs requests using a key that is stored in the OpenSSH agent. Opens and manages
+a connection to the current session's agent during operation.
+
+- `options`: an Object containing properties:
+  - `keyId`: a String, fingerprint of the key to retrieve from the agent
+  - `user`: a String, SDC login name to be used
+  - `subuser`: an optional String, SDC sub-user login name
+  - `sshAgentOpts`: an optional Object, any additional options to pass through
+                    to the SSHAgent constructor (eg `timeout`)
+
+### `cliSigner(options);`
+
+Signs requests using a key located either in the OpenSSH agent, or found in
+the filesystem under `$HOME/.ssh` (or its equivalent on your platform).
+
+This is generally intended for use with CLI utilities (eg the `sdc-listmachines`
+tool and family), hence the name.
+
+- `options`: an Object containing properties:
+  - `keyId`: a String, fingerprint of the key to retrieve or find
+  - `user`: a String, SDC login name to be used
+  - `subuser`: an optional String, SDC sub-user login name
+  - `algorithm`: an optional String, the signing algorithm to use. If this
+                 does not match up with the algorithm of the key (once it is
+                 located), an Error will be thrown.
+  - `sshAgentOpts`: an optional Object, any additional options to pass through
+                    to the SSHAgent constructor (eg `timeout`)
+
+The `keyId` fingerprint does not necessarily need to be the exact format
+(hex MD5) as sent to the server -- it can be in any fingerprint format supported
+by the [`sshpk`](https://github.com/arekinath/node-sshpk) library.
+
+As of version 2.0.0, an invalid fingerprint (one that can never match any key,
+because, for example, it contains invalid characters) will produce an exception
+immediately rather than returning a `sign` function.
 
 Note that the `cliSigner` and `sshAgentSigner` are not suitable for server
 applications, or any other system where the performance degradation necessary
 to interact with SSH is not acceptable; put another way, you should only use
 it for interactive tooling, such as the CLI that ships with node-smartdc.
+
+### Writing your own signer
 
 Should you wish to write a custom plugin, the expected implementation of the
 `sign` callback is a function of the form `function (string, callback)`.

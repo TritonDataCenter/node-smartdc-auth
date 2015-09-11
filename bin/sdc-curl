@@ -1,0 +1,103 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// vim: set filetype=javascript :
+// Copyright 2015 Joyent, Inc.  All rights reserved.
+
+var dashdash = require('dashdash');
+var bunyan = require('bunyan');
+var spawn = require('child_process').spawn;
+var auth = require('../lib/index');
+var sprintf = require('util').format;
+
+var options = [
+    {
+        names: ['account'],
+        type: 'string',
+        help: 'account name',
+        env: 'SDC_ACCOUNT'
+    }, {
+        names: ['user'],
+        type: 'string',
+        help: 'account sub-user login',
+        env: 'SDC_USER'
+    }, {
+        names: ['keyId'],
+        type: 'string',
+        help: 'your ssh key fingerprint',
+        env: 'SDC_KEY_ID'
+    }, {
+        names: ['manta'],
+        type: 'bool',
+        help: 'use manta-style sub-user format'
+    }, {
+        names: ['help', 'h'],
+        type: 'bool',
+        help: 'print this help and exit'
+    }
+];
+
+if (require.main === module) {
+    var parser = dashdash.createParser({
+        options: options,
+        interspersed: true,
+        allowUnknown: true
+    });
+
+    try {
+        var opts = parser.parse(process.argv);
+    } catch (e) {
+        console.error('sdc-curl: error: %s', e.message);
+        process.exit(1);
+    }
+
+    if (opts.help || opts._args.length < 1) {
+        var help = parser.help({includeEnv: true}).trimRight();
+        console.log(
+            'sdc-curl: performs a signed curl request with the same auth\n' +
+            '          creds as the sdc-* family of tools');
+        console.log('usage: sdc-curl [OPTIONS]\n' +
+            'options:\n' + help);
+        console.log('any options other than these will be passed directly to '
+            + 'curl');
+        process.exit(1);
+    }
+
+    var user = opts.account;
+    if (opts.user !== undefined) {
+        user = opts.account + '/user/' + opts.user;
+        if (opts.manta)
+            user = opts.account + '/' + opts.user;
+    }
+
+    var sign = auth.cliSigner({
+        user: user,
+        keyId: opts.keyId
+    });
+
+    var args = opts._args.slice();
+
+    var dateHeader = 'date: ' + new Date().toUTCString();
+
+    sign(dateHeader, function (err, obj) {
+        if (err)
+            throw (err);
+
+        var authz = sprintf(
+            'Signature keyId="/%s/keys/%s",headers="date",' +
+            'algorithm="%s",signature="%s"',
+            obj.user, obj.keyId, obj.algorithm, obj.signature);
+
+        args.push('-H');
+        args.push(dateHeader);
+        args.push('-H');
+        args.push('Authorization: ' + authz);
+
+        var kid = spawn('curl', args);
+        kid.stdout.pipe(process.stdout);
+        kid.stderr.pipe(process.stderr);
+        process.stdin.pipe(kid.stdin);
+        kid.on('close', function (rc) {
+            process.exit(rc);
+        });
+    });
+}
