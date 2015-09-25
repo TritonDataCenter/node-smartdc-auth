@@ -111,3 +111,8 @@ test('loadSSHKey enc-private other key', function (t) {
     });
 })
 
+test('teardown', function (t) {
+    temp.cleanup(function () {
+        t.end();
+    });
+});

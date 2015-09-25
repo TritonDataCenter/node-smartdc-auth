@@ -115,3 +115,9 @@ test('cliSigner invalid fp', function (t) {
     }, sshpk.FingerprintFormatError);
     t.end();
 });
+
+test('teardown', function (t) {
+    temp.cleanup(function () {
+        t.end();
+    });
+});
