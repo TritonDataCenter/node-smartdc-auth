@@ -16,6 +16,7 @@ var testDir = __dirname;
 var tmpDir;
 var ID_RSA_FP = 'SHA256:29GY+6bxcBkcNNUzTnEcTdTv1W3d3PN/OxyplcYSoX4';
 var ID_RSA2_FP = 'SHA256:FWEns/VvPZdbSPtoVDUlUpewdP/LgC/4+l/V42Oltpw';
+var ID_DSA_FP = 'SHA256:WI2QyT/UuJ4LaPylGynx244f6k+xqVHYOyxg1cfnL0I';
 
 function copyAsset(name, dst, cb) {
     var rd = fs.createReadStream(path.join(testDir, name));
@@ -32,8 +33,12 @@ test('setup', function (t) {
 
         vasync.parallel({
             funcs: [
-                copyAsset.bind(this, 'id_rsa', path.join('.ssh', 'id_rsa')),
-                copyAsset.bind(this, 'id_rsa.pub', path.join('.ssh', 'id_rsa.pub'))
+                copyAsset.bind(this, 'id_rsa',
+                    path.join('.ssh', 'id_rsa')),
+                copyAsset.bind(this, 'id_rsa.pub',
+                    path.join('.ssh', 'id_rsa.pub')),
+                copyAsset.bind(this, 'id_dsa',
+                    path.join('.ssh', 'id_dsa'))
             ]
         }, function (err, res) {
             t.error(err);
@@ -63,13 +68,22 @@ test('loadSSHKey public only', function (t) {
     });
 });
 
-test('loadSSHKey private only', function (t) {
+test('loadSSHKey private only rsa', function (t) {
     fs.unlinkSync(path.join(tmpDir, '.ssh', 'id_rsa.pub'));
     copyAsset('id_rsa', path.join('.ssh', 'id_rsa'), function () {
         auth.loadSSHKey(ID_RSA_FP, function (err) {
             t.error(err);
             t.end();
         });
+    });
+});
+
+test('loadSSHKey private only dsa', function (t) {
+    auth.loadSSHKey(ID_DSA_FP, function (err, key) {
+        t.error(err);
+        t.equal(key.type, 'dsa');
+        t.equal(key.size, 1024);
+        t.end();
     });
 });
 
