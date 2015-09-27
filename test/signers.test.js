@@ -71,6 +71,7 @@ test('basic cliSigner rsa', function (t) {
         t.error(err);
         t.strictEqual(sigData.keyId, ID_RSA_MD5);
         t.strictEqual(sigData.user, 'foo');
+        t.strictEqual(sigData.algorithm, 'rsa-sha256');
         t.strictEqual(sigData.signature, SIG_RSA_SHA256);
         t.end();
     });
@@ -111,6 +112,7 @@ test('basic cliSigner with algorithm and subuser', function (t) {
         t.strictEqual(sigData.keyId, ID_RSA_MD5);
         t.strictEqual(sigData.user, 'foo');
         t.strictEqual(sigData.subuser, 'bar');
+        t.strictEqual(sigData.algorithm, 'rsa-sha1');
         t.strictEqual(sigData.signature, SIG_RSA_SHA1);
         t.end();
     });

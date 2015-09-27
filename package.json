@@ -1,14 +1,15 @@
 {
     "name": "smartdc-auth",
     "description": "SmartDataCenter Authentication Library",
-    "version": "2.0.1",
+    "version": "2.1.0",
     "author": "Joyent (joyent.com)",
     "contributors": [
         "Mark Cavage",
         "Nate Fitch",
         "Bryan Cantrill",
         "Pedro P. Candel",
-        "Dave Pacheco"
+        "Dave Pacheco",
+        "Alex Wilson"
     ],
     "repository": {
         "type": "git",
@@ -31,8 +32,8 @@
         "clone": "0.1.5",
         "dashdash": "1.7.3",
         "once": "1.3.0",
-        "ssh-agent": "0.2.4",
-        "sshpk": "~1.1.0",
+        "sshpk-agent": "~1.0.1",
+        "sshpk": "~1.3.0",
         "vasync": "1.4.3"
     },
     "devDependencies": {

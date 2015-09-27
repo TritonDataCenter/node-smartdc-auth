@@ -9,6 +9,8 @@ var path = require('path');
 var fs = require('fs');
 var crypto = require('crypto');
 var auth = require('../lib/index');
+var temp = require('temp');
+var spawn = require('child_process').spawn;
 
 var ID_RSA_FP = 'SHA256:29GY+6bxcBkcNNUzTnEcTdTv1W3d3PN/OxyplcYSoX4';
 var ID_RSA_MD5 = 'fa:56:a1:6b:cc:04:97:fe:e2:98:54:c4:2e:0d:26:c6';
@@ -19,8 +21,12 @@ var SIG_RSA_SHA1 = 'parChQDdkj8wFY75IUW/W7KN9q5FFTPYfcAf+W7PmN8yxnRJB884NHYNT' +
     'hl/TjZB2s0vt+kkfX3nldi54heTKbDKFwCOoDmVWQ2oE2ZrJPPFiUHReUAIRvwD0V/q7' +
     '4c/DiRR6My7FEa8Szce27DBrjBmrMvMcmd7/jDbhaGusy4=';
 
+/* automatically clean up temp dir at exit */
+temp.track();
+
 var agent;
 var testDir = __dirname;
+var tmpDir;
 
 test('setup', function (t) {
     delete (process.env['SSH_AGENT_PID']);
@@ -124,8 +130,79 @@ test('clisigner with only agent', function (t) {
     sign('foobar', function (err, sigData) {
         t.error(err);
         t.strictEqual(sigData.keyId, ID_RSA_MD5);
+        t.strictEqual(sigData.algorithm, 'rsa-sha1');
         t.strictEqual(sigData.user, 'foo');
         t.strictEqual(sigData.signature, SIG_RSA_SHA1);
+        t.end();
+    });
+});
+
+var bulkKeys = [];
+
+test('generate 40 keys (for TOOLS-1214)', function (t) {
+    t.ok(agent);
+    temp.mkdir('smartdc-auth.agent-keys.test', function (err, tmp) {
+        t.error(err);
+        tmpDir = tmp;
+
+        process.env['HOME'] = tmpDir;
+        fs.mkdirSync(path.join(tmpDir, '.ssh'));
+
+        var inputs = [];
+        for (var i = 1; i <= 40; ++i)
+            inputs.push(i);
+
+        vasync.forEachParallel({
+            func: genKey,
+            inputs: inputs
+        }, function (err) {
+            t.error(err);
+            t.end();
+        });
+
+        function genKey(n, cb) {
+            var fn = path.join(tmpDir, 'id_rsa_' + n);
+            var kid = spawn('ssh-keygen', [
+                '-f', fn, '-t', 'rsa', '-N', '', '-b', '1024', '-q']);
+            var errBuf = '';
+            kid.stderr.on('data', function (chunk) {
+                errBuf += chunk.toString();
+            });
+            kid.on('close', function(rc) {
+                if (rc !== 0) {
+                    cb(new Error('ssh-keygen failed: ' + errBuf.trim()));
+                    return;
+                }
+                fs.readFile(fn + '.pub', function (err, data) {
+                    if (err) {
+                        cb(err);
+                        return;
+                    }
+
+                    bulkKeys.push(sshpk.parseKey(data, 'ssh'));
+                    agent.addKey(fn, cb);
+                });
+            });
+        }
+    });
+});
+
+test('cliSigner using agent with lots of keys (TOOLS-1214)', function (t) {
+    t.ok(agent);
+    var sign = auth.cliSigner({
+        keyId: bulkKeys[2].fingerprint('sha256').toString(),
+        user: 'foo'
+    });
+    t.ok(sign);
+    sign('foobar', function (err, sigData) {
+        t.error(err);
+        t.strictEqual(sigData.keyId,
+            bulkKeys[2].fingerprint('md5').toString('hex'));
+        t.strictEqual(sigData.user, 'foo');
+        t.strictEqual(sigData.algorithm, 'rsa-sha1');
+        var v = bulkKeys[2].createVerify('sha1');
+        v.update('foobar');
+        t.ok(v.verify(sigData.signature, 'base64'));
         t.end();
     });
 });
@@ -133,6 +210,8 @@ test('clisigner with only agent', function (t) {
 test('agent teardown', function (t) {
     t.ok(agent);
     agent.close(function () {
-        t.end();
+        temp.cleanup(function () {
+            t.end();
+        });
     });
 });

@@ -71,11 +71,16 @@ tool and family), hence the name.
   - `keyId`: a String, fingerprint of the key to retrieve or find
   - `user`: a String, SDC login name to be used
   - `subuser`: an optional String, SDC sub-user login name
-  - `algorithm`: an optional String, the signing algorithm to use. If this
-                 does not match up with the algorithm of the key (once it is
-                 located), an Error will be thrown.
   - `sshAgentOpts`: an optional Object, any additional options to pass through
                     to the SSHAgent constructor (eg `timeout`)
+  - `algorithm`: DEPRECATED, an optional String, the signing algorithm to use.
+                 If this does not match up with the algorithm of the key (once
+                 it is located), an Error will be thrown.
+
+(The `algorithm` option is deprecated as its backwards-compatible behaviour is
+to apply only to keys that were found on disk, not in the SSH agent. If you have
+a compelling use case for a replacement for this option in future, please open
+an issue on this repo).
 
 The `keyId` fingerprint does not necessarily need to be the exact format
 (hex MD5) as sent to the server -- it can be in any fingerprint format supported
