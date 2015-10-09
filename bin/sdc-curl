@@ -30,6 +30,10 @@ var options = [
         type: 'bool',
         help: 'use manta-style sub-user format'
     }, {
+        names: ['dry-run', 'just-print'],
+        type: 'bool',
+        help: 'just print the curl arguments, don\'t run it'
+    }, {
         names: ['help', 'h'],
         type: 'bool',
         help: 'print this help and exit'
@@ -91,6 +95,14 @@ if (require.main === module) {
         args.push(dateHeader);
         args.push('-H');
         args.push('Authorization: ' + authz);
+
+        if (opts.dry_run) {
+            for (var i = 0; i < args.length; ++i)
+                if (args[i].match(/[^a-zA-Z0-9_\-.]/))
+                    args[i] = "'" + args[i].replace(/'/g, '\'"\'"\'') + "'";
+            console.log('curl ' + args.join(' '));
+            process.exit(0);
+        }
 
         var kid = spawn('curl', args);
         kid.stdout.pipe(process.stdout);
