@@ -9,6 +9,7 @@ var sshpk = require('sshpk');
 var vasync = require('vasync');
 var auth = require('../lib/index');
 var crypto = require('crypto');
+var httpSignature = require('http-signature');
 
 /* automatically clean up temp dir at exit */
 temp.track();
@@ -28,6 +29,9 @@ var SIG_RSA_SHA256 = 'KX1okEE5wWjgrDYM35z9sO49WRk/DeZy7QeSNCFdOsn45BO6rVOIH5v' +
 var SIG_RSA_SHA1 = 'parChQDdkj8wFY75IUW/W7KN9q5FFTPYfcAf+W7PmN8yxnRJB884NHYNT' +
     'hl/TjZB2s0vt+kkfX3nldi54heTKbDKFwCOoDmVWQ2oE2ZrJPPFiUHReUAIRvwD0V/q7' +
     '4c/DiRR6My7FEa8Szce27DBrjBmrMvMcmd7/jDbhaGusy4=';
+
+var ID_RSA = sshpk.parsePrivateKey(
+    fs.readFileSync(path.join(testDir, 'id_rsa')));
 
 function copyAsset(name, dst, cb) {
     var rd = fs.createReadStream(path.join(testDir, name));
@@ -73,6 +77,30 @@ test('basic cliSigner rsa', function (t) {
         t.strictEqual(sigData.user, 'foo');
         t.strictEqual(sigData.algorithm, 'rsa-sha256');
         t.strictEqual(sigData.signature, SIG_RSA_SHA256);
+        t.end();
+    });
+});
+
+test('requestSigner rsa', function (t) {
+    var signer = auth.requestSigner({
+        keyId: ID_RSA_FP,
+        user: 'foo'
+    });
+    t.ok(signer);
+    signer.writeHeader('date', 'foo');
+    signer.sign(function (err, authz) {
+        t.error(err);
+        var req = {
+            headers: {
+                authorization: authz,
+                date: 'foo'
+            }
+        };
+        var sig = httpSignature.parseRequest(req, {});
+        t.strictEqual(sig.scheme, 'Signature');
+        t.strictEqual(sig.params.keyId, '/foo/keys/' + ID_RSA_MD5);
+        t.strictEqual(sig.params.algorithm, 'rsa-sha256');
+        t.ok(httpSignature.verifySignature(sig, ID_RSA));
         t.end();
     });
 });
