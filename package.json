@@ -1,7 +1,7 @@
 {
     "name": "smartdc-auth",
     "description": "SmartDataCenter Authentication Library",
-    "version": "2.2.2",
+    "version": "2.2.3",
     "author": "Joyent (joyent.com)",
     "contributors": [
         "Mark Cavage",
