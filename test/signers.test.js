@@ -133,6 +133,38 @@ test('requestSigner with premade cliSigner', function (t) {
     });
 });
 
+test('requestSigner with custom signer', function (t) {
+    var sign = function (data, cb) {
+        cb(null, {
+            user: 'foo',
+            subuser: 'test',
+            signature: 'bar',
+            keyId: '12:34:56:78',
+            algorithm: 'rsa-sha1'
+        });
+    };
+    var signer = auth.requestSigner({
+        sign: sign
+    });
+    t.ok(signer);
+    signer.writeHeader('date', 'bar');
+    signer.sign(function (err, authz) {
+        t.error(err);
+        var req = {
+            headers: {
+                authorization: authz,
+                date: 'foo'
+            }
+        };
+        var sig = httpSignature.parseRequest(req, {});
+        t.strictEqual(sig.scheme, 'Signature');
+        t.strictEqual(sig.params.keyId, '/foo/users/test/keys/12:34:56:78');
+        t.strictEqual(sig.params.algorithm, 'rsa-sha1');
+        t.strictEqual(sig.params.signature, 'bar');
+        t.end();
+    });
+});
+
 test('basic cliSigner dsa', function (t) {
     var sign = auth.cliSigner({
         keyId: ID_DSA_FP,
