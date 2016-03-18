@@ -51,10 +51,14 @@ test('setup', function (t) {
 });
 
 test('loadSSHKey full pair', function (t) {
-    auth.loadSSHKey(ID_RSA_FP, function (err, key) {
+    auth.loadSSHKey(ID_RSA_FP, function (err, key, keyFiles) {
         t.error(err);
         t.equal(key.type, 'rsa');
         t.equal(key.size, 1024);
+        t.equal(keyFiles.public, path.join(tmpDir, '.ssh', 'id_rsa.pub'),
+            'keyFiles.public');
+        t.equal(keyFiles.private, path.join(tmpDir, '.ssh', 'id_rsa'),
+            'keyFiles.private');
         t.end();
     });
 });
