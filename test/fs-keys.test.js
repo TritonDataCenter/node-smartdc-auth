@@ -55,10 +55,7 @@ test('loadSSHKey full pair', function (t) {
         t.error(err);
         t.equal(key.type, 'rsa');
         t.equal(key.size, 1024);
-        t.equal(keyFiles.public, path.join(tmpDir, '.ssh', 'id_rsa.pub'),
-            'keyFiles.public');
-        t.equal(keyFiles.private, path.join(tmpDir, '.ssh', 'id_rsa'),
-            'keyFiles.private');
+        t.equal(key.comment, path.join(tmpDir, '.ssh', 'id_rsa'));
         t.end();
     });
 });
@@ -69,6 +66,20 @@ test('loadSSHKey public only', function (t) {
         t.ok(err);
         t.ok(err instanceof auth.KeyNotFoundError);
         t.end();
+    });
+});
+
+test('keyring cannot sign', function (t) {
+    var kr = new auth.KeyRing({ plugins: ['homedir'] });
+    var fp = sshpk.parseFingerprint(ID_RSA_FP);
+    kr.findSigningKeyPair(fp, function (err, kp) {
+        t.ok(err);
+        kr.find(fp, function (err2, kps) {
+            t.error(err2);
+            t.strictEqual(kps.length, 1);
+            t.ok(!kps[0].canSign());
+            t.end();
+        });
     });
 });
 
@@ -91,6 +102,17 @@ test('loadSSHKey private only dsa', function (t) {
     });
 });
 
+test('keyring basic', function (t) {
+    var kr = new auth.KeyRing({ plugins: ['homedir'] });
+    var fp = sshpk.parseFingerprint(ID_DSA_FP);
+    kr.findSigningKeyPair(fp, function (err, kp) {
+        t.error(err);
+        t.ok(kp.canSign());
+        t.ok(!kp.isLocked());
+        t.end();
+    });
+});
+
 test('setup encrypted', function (t) {
     vasync.parallel({
         funcs: [
@@ -103,11 +125,35 @@ test('setup encrypted', function (t) {
     });
 });
 
+test('keyring unlock', function (t) {
+    var kr = new auth.KeyRing({ plugins: ['homedir'] });
+    var fp = sshpk.parseFingerprint(ID_RSA2_FP);
+    kr.findSigningKeyPair(fp, function (err, kp) {
+        t.error(err);
+        t.ok(kp.isLocked());
+        kp.unlock('asdfasdf');
+        t.ok(!kp.isLocked());
+        t.ok(fp.matches(kp.getPrivateKey()));
+        t.end();
+    });
+});
+
+test('file plugin', function (t) {
+    var kr = new auth.KeyRing({ plugins: [] });
+    var fp = sshpk.parseFingerprint(ID_DSA_FP);
+    kr.addPlugin('file', { keyPath: path.join(testDir, 'id_dsa') });
+    kr.findSigningKeyPair(fp, function (err, kp) {
+        t.error(err);
+        t.ok(kp.canSign());
+        t.ok(!kp.isLocked());
+        t.end();
+    });
+});
+
 test('loadSSHKey enc-private full pair', function (t) {
     auth.loadSSHKey(ID_RSA2_FP, function (err) {
         t.ok(err);
-        t.ok(err instanceof sshpk.KeyParseError);
-        t.notStrictEqual(err.message.indexOf('encrypted'), -1);
+        t.notStrictEqual(err.toString().indexOf('encrypted'), -1);
         t.end();
     });
 });
@@ -116,8 +162,6 @@ test('loadSSHKey enc-private private only', function (t) {
     fs.unlinkSync(path.join(tmpDir, '.ssh', 'id_rsa2.pub'));
     auth.loadSSHKey(ID_RSA2_FP, function (err) {
         t.ok(err);
-        t.ok(err instanceof auth.KeyNotFoundError);
-        t.notStrictEqual(err.message.indexOf('encrypted'), -1);
         t.end();
     });
 });

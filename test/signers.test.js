@@ -81,6 +81,46 @@ test('basic cliSigner rsa', function (t) {
     });
 });
 
+test('KeyRing signer rsa', function (t) {
+    var kr = new auth.KeyRing();
+    var fp = sshpk.parseFingerprint(ID_RSA_FP);
+    kr.findSigningKeyPair(fp, function (err, kp) {
+        t.error(err);
+        var rs = kp.createRequestSigner({
+            user: 'foo'
+        });
+        rs.writeHeader('date', 'foo');
+        rs.sign(function (err2, authz) {
+            t.error(err2);
+            var req = {
+                headers: {
+                    authorization: authz,
+                    date: 'foo'
+                }
+            };
+            var sig = httpSignature.parseRequest(req, {});
+            t.strictEqual(sig.scheme, 'Signature');
+            t.strictEqual(sig.params.keyId, '/foo/keys/' + ID_RSA_MD5);
+            t.strictEqual(sig.params.algorithm, 'rsa-sha256');
+            t.ok(httpSignature.verifySignature(sig, ID_RSA));
+            t.end();
+        });
+    })
+});
+
+test('KeyRing list keys', function (t) {
+    var kr = new auth.KeyRing();
+    kr.list(function (err, kps) {
+        t.error(err);
+        t.strictEqual(Object.keys(kps).length, 2);
+        Object.keys(kps).forEach(function (kId) {
+            t.strictEqual(kps[kId].length, 1);
+            t.ok(kps[kId][0].canSign());
+        });
+        t.end();
+    });
+});
+
 test('requestSigner rsa', function (t) {
     var signer = auth.requestSigner({
         keyId: ID_RSA_FP,
