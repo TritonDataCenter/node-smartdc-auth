@@ -16,6 +16,8 @@ var ID_RSA_FP = 'SHA256:29GY+6bxcBkcNNUzTnEcTdTv1W3d3PN/OxyplcYSoX4';
 var ID_RSA_MD5 = 'fa:56:a1:6b:cc:04:97:fe:e2:98:54:c4:2e:0d:26:c6';
 var ID_DSA_FP = 'SHA256:WI2QyT/UuJ4LaPylGynx244f6k+xqVHYOyxg1cfnL0I';
 var ID_DSA_MD5 = 'a6:e6:68:d3:28:2b:0a:a0:12:54:da:c4:c0:22:8d:ba';
+var ID_ECDSA_FP = 'SHA256:ezilZp/ZHJuMF8i9jyMGuxRdFCu4rzGYLQmfSOhrolE';
+var ID_ECDSA_MD5 = '00:74:32:ae:0a:24:3c:7a:e7:07:b8:ee:91:c4:c7:27';
 
 var SIG_RSA_SHA1 = 'parChQDdkj8wFY75IUW/W7KN9q5FFTPYfcAf+W7PmN8yxnRJB884NHYNT' +
     'hl/TjZB2s0vt+kkfX3nldi54heTKbDKFwCOoDmVWQ2oE2ZrJPPFiUHReUAIRvwD0V/q7' +
@@ -111,6 +113,33 @@ test('agentsigner dsa', function (t) {
             var v = crypto.createVerify('DSA-SHA1');
             v.update('foobar');
             var keyData = fs.readFileSync(path.join(testDir, 'id_dsa.pem'));
+            t.ok(v.verify(keyData, sigData.signature, 'base64'));
+
+            t.end();
+        });
+    });
+});
+
+test('agentsigner ecdsa + buffer', function (t) {
+    t.ok(agent);
+    agent.addKey(path.join(testDir, 'id_ecdsa'), function (err) {
+        t.error(err);
+
+        var sign = auth.sshAgentSigner({
+            keyId: ID_ECDSA_FP,
+            user: 'foo'
+        });
+        t.ok(sign);
+        var buf = crypto.randomBytes(32);
+        sign(buf, function (err, sigData) {
+            t.error(err);
+            t.strictEqual(sigData.keyId, ID_ECDSA_MD5);
+            t.strictEqual(sigData.algorithm, 'ecdsa-sha256');
+            t.strictEqual(sigData.user, 'foo');
+
+            var v = crypto.createVerify('sha256');
+            v.update(buf);
+            var keyData = fs.readFileSync(path.join(testDir, 'id_ecdsa.pem'));
             t.ok(v.verify(keyData, sigData.signature, 'base64'));
 
             t.end();
