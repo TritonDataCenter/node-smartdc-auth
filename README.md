@@ -1,11 +1,11 @@
-# Joyent Authentication Library
+# Triton Authentication Library
 
-Utility functions to sign http requests to Joyent Triton and Manta services.
+Utility functions to sign http requests to Triton and Manta services.
 This library is meant to be used internally by other libraries and tools as in
-the [`triton`](https://github.com/joyent/node-triton) and
-[Manta](https://github.com/joyent/node-manta) repositories.
+the [`triton`](https://github.com/TritonDataCenter/node-triton) and
+[Manta](https://github.com/TritonDataCenter/node-manta) repositories.
 
-If you only want to use one of these libraries to make requests to a Joyent
+If you only want to use one of these libraries to make requests to a Triton
 service, you should not need to use this library directly at all.
 
 Its API can be used independently, though, to search for and list the available
@@ -81,8 +81,8 @@ keyRing.findSigningKeyPair(fp, function (err, keyPair) {
 
 ## Overview
 
-Authentication to Triton CloudAPI and Manta is built on top of Joyent's
-[http-signature](https://github.com/joyent/node-http-signature) specification.
+Authentication to Triton CloudAPI and Manta is built on top of the
+[http-signature](https://github.com/TritonDataCenter/node-http-signature) specification.
 All requests to the APIs require an HTTP Authorization header where the scheme is
 `Signature`.  Full details are available in the `http-signature` specification,
 but a simple form is:
@@ -328,7 +328,7 @@ an issue on this repo).
 
 The `keyId` fingerprint does not necessarily need to be the exact format
 (hex MD5) as sent to the server -- it can be in any fingerprint format supported
-by the [`sshpk`](https://github.com/arekinath/node-sshpk) library.
+by the [`sshpk`](https://github.com/TritonDataCenter/node-sshpk) library.
 
 As of version 2.0.0, an invalid fingerprint (one that can never match any key,
 because, for example, it contains invalid characters) will produce an exception
@@ -345,4 +345,4 @@ MIT.
 
 ## Bugs
 
-See <https://github.com/joyent/node-smartdc-auth/issues>.
+See <https://github.com/TritonDataCenter/node-smartdc-auth/issues>.
