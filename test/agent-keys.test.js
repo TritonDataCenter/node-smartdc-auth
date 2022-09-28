@@ -1,4 +1,5 @@
 // Copyright 2015 Joyent, Inc.  All rights reserved.
+// Copyright 2022 MNX Cloud, Inc.
 
 var test = require('tape').test;
 
@@ -19,9 +20,9 @@ var ID_DSA_MD5 = 'a6:e6:68:d3:28:2b:0a:a0:12:54:da:c4:c0:22:8d:ba';
 var ID_ECDSA_FP = 'SHA256:ezilZp/ZHJuMF8i9jyMGuxRdFCu4rzGYLQmfSOhrolE';
 var ID_ECDSA_MD5 = '00:74:32:ae:0a:24:3c:7a:e7:07:b8:ee:91:c4:c7:27';
 
-var SIG_RSA_SHA1 = 'parChQDdkj8wFY75IUW/W7KN9q5FFTPYfcAf+W7PmN8yxnRJB884NHYNT' +
-    'hl/TjZB2s0vt+kkfX3nldi54heTKbDKFwCOoDmVWQ2oE2ZrJPPFiUHReUAIRvwD0V/q7' +
-    '4c/DiRR6My7FEa8Szce27DBrjBmrMvMcmd7/jDbhaGusy4=';
+var SIG_RSA_SHA256 = 'KX1okEE5wWjgrDYM35z9sO49WRk/DeZy7QeSNCFdOsn45BO6rVOIH5vV7' +
+    'WD25/VWyGCiN86Pml/Eulhx3Xx4ZUEHHc18K0BAKU5CSu/jCRI0dEFt4q1bXCyM7aKFlAXpk' +
+    '7CJIM0Gx91CJEXcZFuUddngoqljyt9hu4dpMhrjVFA=';
 
 /* automatically clean up temp dir at exit */
 temp.track();
@@ -86,9 +87,9 @@ test('agentsigner rsa', function (t) {
         sign('foobar', function (err, sigData) {
             t.error(err);
             t.strictEqual(sigData.keyId, ID_RSA_MD5);
-            t.strictEqual(sigData.algorithm, 'rsa-sha1');
+            t.strictEqual(sigData.algorithm, 'rsa-sha256');
             t.strictEqual(sigData.user, 'foo');
-            t.strictEqual(sigData.signature, SIG_RSA_SHA1);
+            t.strictEqual(sigData.signature, SIG_RSA_SHA256);
             t.end();
         });
     });
@@ -159,9 +160,9 @@ test('clisigner with only agent', function (t) {
     sign('foobar', function (err, sigData) {
         t.error(err);
         t.strictEqual(sigData.keyId, ID_RSA_MD5);
-        t.strictEqual(sigData.algorithm, 'rsa-sha1');
+        t.strictEqual(sigData.algorithm, 'rsa-sha256');
         t.strictEqual(sigData.user, 'foo');
-        t.strictEqual(sigData.signature, SIG_RSA_SHA1);
+        t.strictEqual(sigData.signature, SIG_RSA_SHA256);
         t.end();
     });
 });
@@ -228,8 +229,8 @@ test('cliSigner using agent with lots of keys (TOOLS-1214)', function (t) {
         t.strictEqual(sigData.keyId,
             bulkKeys[2].fingerprint('md5').toString('hex'));
         t.strictEqual(sigData.user, 'foo');
-        t.strictEqual(sigData.algorithm, 'rsa-sha1');
-        var v = bulkKeys[2].createVerify('sha1');
+        t.strictEqual(sigData.algorithm, 'rsa-sha256');
+        var v = bulkKeys[2].createVerify('sha256');
         v.update('foobar');
         t.ok(v.verify(sigData.signature, 'base64'));
         t.end();

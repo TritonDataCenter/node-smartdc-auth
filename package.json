@@ -1,8 +1,9 @@
 {
     "name": "smartdc-auth",
-    "description": "Joyent Authentication Library",
-    "version": "2.5.8",
-    "author": "Joyent (joyent.com)",
+    "description": "Triton Authentication Library",
+    "version": "2.5.9",
+    "author": "MNX Cloud (mnx.io)",
+    "license": "MIT",
     "contributors": [
         "Mark Cavage",
         "Nate Fitch",
@@ -13,7 +14,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/joyent/node-smartdc-auth.git"
+        "url": "https://github.com/TritonDataCenter/node-smartdc-auth.git"
     },
     "main": "lib/index.js",
     "scripts": {
@@ -34,8 +35,8 @@
         "http-signature": "^1.0.2",
         "once": "1.3.0",
         "sshpk-agent": "^1.3.0",
-        "sshpk": "^1.8.3",
-        "vasync": "1.4.3"
+        "sshpk": "^1.13.2",
+        "vasync": "^2.2.1"
     },
     "devDependencies": {
         "tape": ">=4.2.0 <5.0.0",
