@@ -32,7 +32,7 @@
         "bunyan": "1.8.12",
         "clone": "0.1.5",
         "dashdash": "1.10.1",
-        "http-signature": "https://github.com/TritonDataCenter/node-http-signature.git#a08360e",
+        "http-signature": "1.4.0",
         "once": "1.3.0",
         "sshpk-agent": "^1.8.1",
         "sshpk": "^1.18.0",
